@@ -20,3 +20,9 @@ Project Description
 -------------------
 
 
+Resources
+---------
+
+* [Introduction into Developing Plugins - Fiji](http://fiji.sc/Introduction_into_Developing_Plugins)
+* [ImageJ Programming Basics](http://albert.rierol.net/imagej_programming_tutorials.html#ImageJ programming basics)
+* [ImageJ Developer API](http://rsb.info.nih.gov/ij/developer/api/index.html)
