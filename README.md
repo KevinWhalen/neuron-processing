@@ -27,3 +27,4 @@ Resources
 * [ImageJ Programming Basics](http://albert.rierol.net/imagej_programming_tutorials.html#ImageJ programming basics)
 * [ImageJ Developer API](http://rsb.info.nih.gov/ij/developer/api/index.html)
 * [Eclipse Git User Guide](http://wiki.eclipse.org/EGit/User_Guide)
+* [Developing ImageJ in Eclipse](http://fiji.sc/Eclipse)
