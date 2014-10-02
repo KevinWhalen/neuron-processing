@@ -1,20 +1,41 @@
+/* Segmentation.java
+ * 
+ * https://github.com/imagej/imagej
+ * https://github.com/fiji/fiji
+ * 
+ * http://fiji.sc/Developing_Fiji#Writing_plugins
+ * http://fiji.sc/Developing_Fiji_in_Eclipse
+ * http://fiji.sc/Introduction_into_Developing_Plugins
+ * 
+ * Look into: 
+ *   http://rsbweb.nih.gov/ij/docs/guide/146-29.html
+ *   https://github.com/imagej/minimal-ij1-plugin/blob/master/src/main/java/Process_Pixels.java
+ * 2014-10-01
+*/
+
+
 package neuron;
+
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.gui.Plot;
 import ij.ImageStack;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.Analyzer;
-import ij.gui.Plot;
-import ij.plugin.filter.PlugInFilter;
+import ij.plugin.PlugIn;
+//import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
 
 
 public class Segmentation
-	implements PlugInFilter
+	implements PlugIn
+	//implements PlugInFilter
 {
-	//private ImagePlus imp;
-	public ImagePlus imp;
+	//public ImagePlus imp;
+	private ImagePlus imp;
+	private ImageProcessor ip;
+	private ImageStack is;
 
 
 	/*public static void main(String[] args)
@@ -44,6 +65,80 @@ public class Segmentation
 	}*/
 
 
+	private void preprocessSingle()
+	{
+		IJ.run(this.imp, "Despeckle", "stack");
+		IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Bright");
+		IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Dark");
+	}
+	private void preprocess3D()
+	{
+		IJ.run(this.imp, "Smooth (3D)", "method=Gaussian sigma=1.000 use");
+		IJ.run(this.imp, "Median 3D...", "x=2 y=2 z=2");
+	}
+	
+	
+	@Override
+	public void run(String s)
+	{
+		this.imp = IJ.getImage();
+		this.ip = this.imp.getProcessor();
+		this.is = this.imp.getImageStack();
+		
+		// CLAHE parameters.
+		int blocksize = 127;
+		int histogram_bins = 256;
+		int maximum_slope = 3;
+		String mask = "*None*";
+		boolean fast = false;//true;
+		//boolean process_as_composite = true;
+		 
+		//getDimensions(width, height, channels, slices, frames);
+		//boolean isComposite = channels > 1;
+		String parameters =
+				"blocksize=" + blocksize +
+				" histogram=" + histogram_bins +
+				" maximum=" + maximum_slope +
+				" mask=" + mask;
+		if (fast) parameters += " fast_(less_accurate)";
+		//if (isComposite && process_as_composite){
+		//	parameters += " process_as_composite";
+		//	channels = 1;
+		//}
+		
+		for (int i = 1; i <= this.imp.getStackSize(); ++i){
+			this.imp.setSlice(i);
+			this.ip.setSliceNumber(i);
+			//this.ip = is.getProcessor(i);
+			//this.ip = this.imp.getProcessor();
+			
+			IJ.log("    current slice: " + this.imp.getCurrentSlice());
+			//IJ.log("    stack slice: " + this.is.);
+			IJ.log("    processor slice: " + this.ip.getSliceNumber());
+			/*preprocessSingle();
+			// http://fiji.sc/Enhance_Local_Contrast_(CLAHE)
+			IJ.run(this.imp, "Enhance Local Contrast (CLAHE)", parameters);
+			preprocessSingle();*/
+			//this.ip.medianFilter(); // long form: ip.filter(ImageProcessor.MEDIAN_FILTER);
+			//this.ip.findEdges();
+		}
+		
+		// Region of Interest (ROI)
+		
+		//IJ.run(this.imp"Invert", "");
+		//IJ.run(this.imp, "Invert LUT", "");
+		//IJ.run(this.imp, "Make Binary", "method=Default background=Default calculate list");
+		
+		// Active Contour
+		// http://fiji.sc/Level_Sets
+		//IJ.run(imp, "Level Sets", "");
+		// http://imagejdocu.tudor.lu/doku.php?id=plugin:segmentation:active_contour:start
+		// http://bigwww.epfl.ch/jacob/software/SplineSnake/
+		// http://bigwww.epfl.ch/algorithms/esnake/
+	}
+
+
+/*
 	// Required for PlugInFilter, which requires an image.
 	@Override
 	public void run(ImageProcessor ip)
@@ -71,11 +166,11 @@ public class Segmentation
 		IJ.log("    slice: " + this.imp.getSlice());
 
 		// Pre-process image.
-		//IJ.run(this.imp, "Make Binary", null);
-		IJ.run(this.imp, "Despeckle", "stack");
-		IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Bright");
-		IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Dark");
-		IJ.run(imp, "Smooth (3D)", "method=Gaussian sigma=1.000 use");
+		//////IJ.run(this.imp, "Make Binary", null);
+		//IJ.run(this.imp, "Despeckle", "stack");
+		//IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Bright");
+		//IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Dark");
+		////IJ.run(imp, "Smooth (3D)", "method=Gaussian sigma=1.000 use");
 
 		// --- attempt to use CLAHE ---
 		int blocksize = 127;
@@ -114,6 +209,16 @@ public class Segmentation
 			IJ.run(this.imp, "Enhance Local Contrast (CLAHE)", parameters);
 		}
 		
+		IJ.run(this.imp, "Despeckle", "stack");
+		IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Bright");
+		IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Dark");
+		//IJ.run(imp, "Smooth (3D)", "method=Gaussian sigma=1.000 use");
+		
+		//
+		ip.medianFilter(); // long form: ip.filter(ImageProcessor.MEDIAN_FILTER);
+		ip.findEdges();
+		
+		// http://fiji.sc/Introduction_into_Developing_Plugins#Frequently_used_operators
 		//double[] a = {1,2,3};
 		//plot(a);
 		//resultsExample();
@@ -131,7 +236,7 @@ public class Segmentation
 		//IJ.log(imp.getInfoProperty());
 		this.imp = imp;
 		return DOES_ALL;
-	}
+	}*/
 
 
 	// Plots
@@ -178,6 +283,12 @@ public class Segmentation
 			rt.addValue("log", Math.log(i));
 		}
 		rt.show("Results");
+	}
+	
+	
+	// http://fiji.sc/Introduction_into_Developing_Plugins#Working_with_the_pixels.27_values
+	void process()
+	{
 	}
 } // End of Segmentation class.
 
