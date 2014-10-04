@@ -23,6 +23,7 @@ import ij.gui.Plot;
 import ij.ImageStack;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.Analyzer;
+import ij.plugin.Duplicator;
 import ij.plugin.PlugIn;
 //import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
@@ -32,24 +33,18 @@ public class Segmentation
 	implements PlugIn
 	//implements PlugInFilter
 {
-	//public ImagePlus imp;
+	private ImagePlus impOriginal;
 	private ImagePlus imp;
 	private ImageProcessor ip;
 	private ImageStack is;
 
 
-	/*public static void main(String[] args)
+	public static void main(String[] args)
 	{
 		// ImageJ arguments.
 		String[] ijArgs = {
 				//"-Dplugins.dir=...Fiji.app/fiji/plugins",
 				//"-Dmacros.dir=...Fiji.app/fiji/macros"
-				
-				//"-Dplugins.dir=C:\\Users\\whalenk\\Fiji.app\\plugins",
-				//"-Dplugins.dir=C:\\Users\\whalenk\\Fiji.app\\macros"
-				
-				//"-Dplugins.dir=C/Users/whalenk/Fiji.app/plugins",
-				//"-Dplugins.dir=C/Users/whalenk/Fiji.app/macros"
 		};
 		ij.ImageJ.main(ijArgs);
 
@@ -60,30 +55,52 @@ public class Segmentation
 		//IJ.open("pyramidalcells.tif");
 
 		Segmentation a = new Segmentation();
-		a.setup("pyramidalcells", testData);
-		a.run(testData.getProcessor());
-	}*/
-
-
-	private void preprocessSingle()
-	{
-		IJ.run(this.imp, "Despeckle", "stack");
-		IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Bright");
-		IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Dark");
+		//a.setup("pyramidalcells", testData);
+		//a.run(testData.getProcessor());
+		a.run(null);
 	}
-	private void preprocess3D()
+
+
+	private void preprocess(){
+		preprocess("");
+	}
+	
+	
+	private void preprocess(String cmd)
 	{
-		IJ.run(this.imp, "Smooth (3D)", "method=Gaussian sigma=1.000 use");
-		IJ.run(this.imp, "Median 3D...", "x=2 y=2 z=2");
+		IJ.log(" --- NOT IMPLEMENTED ---");
+		switch (cmd){
+			case "denoise":
+			case "denoise-stack":
+				IJ.run(this.imp, "Despeckle", "stack");
+				break;
+			case "denoise-single":
+				IJ.run(this.imp, "Despeckle", "slice");
+				IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Bright");
+				IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Dark");
+				break;
+			case "blur":
+			case "blur-stack":
+				IJ.run(this.imp, "Smooth (3D)", "method=Gaussian sigma=1.000 use");
+				IJ.run(this.imp, "Median 3D...", "x=2 y=2 z=2");
+				break;
+			case "blur-single":
+				break;
+			default:
+				IJ.log(" --- invalid preprocess command: " + cmd + " ---");
+		}
 	}
 	
 	
 	@Override
 	public void run(String s)
 	{
-		this.imp = IJ.getImage();
-		this.ip = this.imp.getProcessor();
-		this.is = this.imp.getImageStack();
+		this.impOriginal = IJ.getImage();
+		//this.imp = new Duplicator().run(this.impOriginal);
+		//this.imp.show();
+		//this.impOriginal.hide();
+		//this.ip = this.imp.getProcessor();
+		//this.is = this.imp.getImageStack();
 		
 		// CLAHE parameters.
 		int blocksize = 127;
@@ -106,6 +123,10 @@ public class Segmentation
 		//	channels = 1;
 		//}
 		
+		IJ.run(this.imp, "Bilateral Filter", "spatial=3 range=50");
+		this.imp = IJ.getImage(); this.ip = this.imp.getProcessor();
+		this.impOriginal.hide();
+		IJ.run(this.imp, "Despeckle", "stack");
 		for (int i = 1; i <= this.imp.getStackSize(); ++i){
 			this.imp.setSlice(i);
 			this.ip.setSliceNumber(i);
@@ -114,17 +135,37 @@ public class Segmentation
 			
 			IJ.log("    current slice: " + this.imp.getCurrentSlice());
 			//IJ.log("    stack slice: " + this.is.);
-			IJ.log("    processor slice: " + this.ip.getSliceNumber());
-			/*preprocessSingle();
+			//IJ.log("    processor slice: " + this.ip.getSliceNumber());
+			//preprocess();
+			IJ.run(this.imp, "Despeckle", "slice");
+			IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Bright");
+			IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Dark");
+			
 			// http://fiji.sc/Enhance_Local_Contrast_(CLAHE)
 			IJ.run(this.imp, "Enhance Local Contrast (CLAHE)", parameters);
-			preprocessSingle();*/
+			
+			//IJ.run(imp, "Anisotropic Diffusion 2D", "number=20 smoothings=1 keep=20 a1=0.50 a2=0.90 dt=20 edge=5");
+			
+			IJ.run(this.imp, "Despeckle", "slice");
+			IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Bright");
+			IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Dark");
 			//this.ip.medianFilter(); // long form: ip.filter(ImageProcessor.MEDIAN_FILTER);
 			//this.ip.findEdges();
 		}
+		//IJ.run(this.imp, "Median 3D...", "x=2 y=2 z=2"); // --- ?? ---
+		/*for (int i = 1; i <= this.imp.getStackSize(); ++i){
+			this.imp.setSlice(i);
+			this.ip.setSliceNumber(i);
+			this.ip.findEdges();
+		}*/
+		IJ.run(this.imp, "Invert", "stack"); //IJ.run(this.imp, "Invert LUT", "");
+		IJ.run(this.imp, "Make Binary", "method=Default background=Default calculate list");
+		IJ.run(imp, "Find Edges", "stack");
 		
 		// Region of Interest (ROI)
 		
+		// ...
+		//equalize histogram
 		//IJ.run(this.imp"Invert", "");
 		//IJ.run(this.imp, "Invert LUT", "");
 		//IJ.run(this.imp, "Make Binary", "method=Default background=Default calculate list");
@@ -135,6 +176,19 @@ public class Segmentation
 		// http://imagejdocu.tudor.lu/doku.php?id=plugin:segmentation:active_contour:start
 		// http://bigwww.epfl.ch/jacob/software/SplineSnake/
 		// http://bigwww.epfl.ch/algorithms/esnake/
+		
+		// Overlay
+		IJ.run(this.imp, "Invert", "stack");
+		String overlayName = this.imp.getTitle(); // The name of the duplicate image that was just processed.
+		// switch to original image
+		this.impOriginal.show();
+		IJ.log("Original title: " + this.impOriginal.getTitle());
+		IJ.log("Duplicate's title: " + this.imp.getTitle());
+		for (int i = 1; i <= this.imp.getStackSize(); ++i){
+			this.impOriginal.setSlice(i);
+			this.imp.setSlice(i);
+			IJ.run("Add Image...", overlayName + " x=0 y=0 opacity=100 zero");
+		}
 	}
 
 
