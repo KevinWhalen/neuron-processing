@@ -16,7 +16,7 @@
 
 package neuron;
 
-
+import CED.Canny_Edge_Detector;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.Plot;
@@ -127,6 +127,7 @@ public class Segmentation
 		this.imp = IJ.getImage(); this.ip = this.imp.getProcessor();
 		this.impOriginal.hide();
 		IJ.run(this.imp, "Despeckle", "stack");
+		//IJ.run(imp, "Enhance Contrast...", "saturated=0.4 equalize process_all");
 		for (int i = 1; i <= this.imp.getStackSize(); ++i){
 			this.imp.setSlice(i);
 			this.ip.setSliceNumber(i);
@@ -153,14 +154,17 @@ public class Segmentation
 			//this.ip.findEdges();
 		}
 		//IJ.run(this.imp, "Median 3D...", "x=2 y=2 z=2"); // --- ?? ---
-		/*for (int i = 1; i <= this.imp.getStackSize(); ++i){
-			this.imp.setSlice(i);
-			this.ip.setSliceNumber(i);
-			this.ip.findEdges();
-		}*/
 		IJ.run(this.imp, "Invert", "stack"); //IJ.run(this.imp, "Invert LUT", "");
 		IJ.run(this.imp, "Make Binary", "method=Default background=Default calculate list");
-		IJ.run(imp, "Find Edges", "stack");
+		//IJ.run(imp, "Find Edges", "stack");
+		//run.(outline
+		//IJ.run(imp, "CED", "gaussian=2 low=2.5 high=7.5"); // Canny_Edge_Detector
+		for (int i = 1; i <= this.imp.getStackSize(); ++i){
+			this.imp.setSlice(i);
+			this.ip.setSliceNumber(i);
+			//this.ip.findEdges();
+			IJ.run(imp, "CED", "gaussian=2 low=2.5 high=7.5"); // Canny_Edge_Detector
+		}
 		
 		// Region of Interest (ROI)
 		
@@ -188,7 +192,7 @@ public class Segmentation
 			this.impOriginal.setSlice(i);
 			this.imp.setSlice(i);
 			IJ.run("Add Image...", overlayName + " x=0 y=0 opacity=100 zero");
-		}
+		} // http://knolskiranakumarap.wordpress.com/2011/07/03/reconstructing-solid-model-from-2d-3rc2kfwq179j2-5/
 	}
 
 

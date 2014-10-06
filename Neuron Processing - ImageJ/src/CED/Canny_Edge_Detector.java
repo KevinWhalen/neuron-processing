@@ -1,10 +1,10 @@
 package CED;
 
-import ij.plugin.PlugIn;
 import ij.plugin.filter.PlugInFilter;
 import ij.*;
 import ij.process.*;
 import ij.gui.GenericDialog;
+import ij.plugin.Duplicator;
 
 import java.util.Arrays;
 
@@ -38,7 +38,7 @@ public class Canny_Edge_Detector implements PlugInFilter {
 	private final static int MAGNITUDE_MAX = (int) (MAGNITUDE_SCALE * MAGNITUDE_LIMIT);
 
 	// fields
-	private int nSlides;
+	//private int nSlides;
 	private int height;
 	private int width;
 	private int picsize;
@@ -64,19 +64,20 @@ public class Canny_Edge_Detector implements PlugInFilter {
 	public ImagePlus imp;
 	public ImagePlus CurrentImp;
 	
-	public int setup(String arg0, ImagePlus arg1) {
-		// TODO Auto-generated method stub
-		this.imp = arg1;
-		
-		
-		CurrentImp = arg1;
-		
-		nSlides = imp.getStackSize();
+	public int setup(String arg0, ImagePlus inputImg) {
+		this.imp = inputImg;
+		/*if (inputImg.getStackSize() > 1){
+			this.imp = new Duplicator().run(inputImg, inputImg.getCurrentSlice(), inputImg.getCurrentSlice());
+			inputImg.hide();
+			this.imp.show();
+		} else {
+			this.imp = inputImg;
+		}*/
 		return DOES_8G+DOES_STACKS+SUPPORTS_MASKING;
 	}
 	
 
-	public static void main(String[] args) 
+	/*public static void main(String[] args) 
 	{
 		String [] ij_args = { "-Dplugins.dir=/Users/erwin/Desktop/fiji_git/fiji/plugins",
 		"-Dmacros.dir=/Users/erwin/Desktop/fiji_git/fiji/macros" };
@@ -90,48 +91,38 @@ public class Canny_Edge_Detector implements PlugInFilter {
 		//System.out.println(overlapCount);
 		//System.out.println(percentage1);
 		//System.out.println(percentage2);
-	}
+	}*/
 
-		
-	//public void run(String arg) {
+	int runCount = 0;
 	public void run(ImageProcessor arg0)
 	{
-		IJ.log("Jeff: Start run Canny edge detector....");
-/*		ImagePlus CurrentImp;
-		
-		CurrentImp = IJ.getImage();*/
-
-		if (!showDialog())
-			return;
-		
-		nSlides = CurrentImp.getStackSize(); 
-		for(int i = 0 ; i < nSlides; i++)
-		{}
-		
-			sourceImage = CurrentImp;//new ImagePlus("", (CurrentImp.getImageStack().getProcessor(41)));
-			Undo.setup(Undo.TYPE_CONVERSION, sourceImage);
-			process();
-			ImageProcessor ip = new FloatProcessor(sourceImage.getWidth(), sourceImage.getHeight(), data);
-			ip = ip.convertToByte(false);
-			if (!Prefs.blackBackground)
-				ip.invertLut();
-			sourceImage.setProcessor(ip);
-		//}
-		
-//		sourceImage = IJ.getImage();
-//		if (sourceImage.getStackSize()>1) {
-//			IJ.error("This plugin does not work with stacks");
-//			return;
-//		}
-//		if (!showDialog())
-//			return;
-//		Undo.setup(Undo.TYPE_CONVERSION, sourceImage);
-//		process();
-//		ImageProcessor ip = new FloatProcessor(sourceImage.getWidth(), sourceImage.getHeight(), data);
-//		ip = ip.convertToByte(false);
-//		if (!Prefs.blackBackground)
-//			ip.invertLut();
-//		sourceImage.setProcessor(ip);
+		if (runCount < 1){
+			IJ.log("Jeff: Start run Canny edge detector...");
+			IJ.log("slice: " + this.imp.getSlice());
+	
+			if (this.imp.getStackSize() > 1){
+				ImagePlus originalImage  = (ImagePlus) this.imp.clone();
+				
+				IJ.log("Copying slice: " + originalImage.getSlice());
+				this.imp = new Duplicator().run(originalImage, originalImage.getSlice(), originalImage.getSlice());
+				originalImage.hide();
+				this.imp.show();
+				
+				sourceImage = imp;
+				ProcessFindEdge(sourceImage);
+				
+				IJ.log("Overwriting slice: " + originalImage.getSlice());
+				sourceImage.copy();
+				originalImage.show();
+				originalImage.paste();
+				originalImage.close();
+				sourceImage.close();
+			} else {
+				sourceImage = imp;
+				ProcessFindEdge(sourceImage);
+			}
+			++runCount;
+		}
 	}
 	
 	public void ProcessFindEdge(ImagePlus imp)
