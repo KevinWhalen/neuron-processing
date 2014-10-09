@@ -128,6 +128,9 @@ public class Segmentation
 		this.impOriginal.hide();
 		IJ.run(this.imp, "Despeckle", "stack");
 		//IJ.run(imp, "Enhance Contrast...", "saturated=0.4 equalize process_all");
+		IJ.run(this.imp, "Despeckle", "slice");
+		IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Bright");
+		IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Dark");
 		for (int i = 1; i <= this.imp.getStackSize(); ++i){
 			this.imp.setSlice(i);
 			this.ip.setSliceNumber(i);
@@ -137,10 +140,6 @@ public class Segmentation
 			IJ.log("    current slice: " + this.imp.getCurrentSlice());
 			//IJ.log("    stack slice: " + this.is.);
 			//IJ.log("    processor slice: " + this.ip.getSliceNumber());
-			//preprocess();
-			IJ.run(this.imp, "Despeckle", "slice");
-			IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Bright");
-			IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Dark");
 			
 			// http://fiji.sc/Enhance_Local_Contrast_(CLAHE)
 			IJ.run(this.imp, "Enhance Local Contrast (CLAHE)", parameters);
