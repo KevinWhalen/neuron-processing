@@ -11,7 +11,9 @@ import java.io.File;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
+import ij.plugin.filter.Analyzer;
 import ij.process.ImageProcessor;
 import ij.gui.*;
 
@@ -46,177 +48,6 @@ public class General_Hough_Transform
 
 	
 ////////////Modified by Jeff	
-/*	public void run(String arg) {
-		System.gc();
-		//hits = null;
-		
-		// Choose pics-source-dir
-		String picDir = IJ.getDirectory("Select Image Source Folder...");
-		if (picDir==null) return;
-		String [] picDirFileList = new File(picDir).list();
-		if (picDirFileList==null) return;
-		IJ.log("The source image folder chosen was " +picDir+ ". It contains " +picDirFileList.length+ " objects.");
-		
-		//Get parameters from user
-		GenericDialog gd = new GenericDialog ("Please insert GHT-parameters", IJ.getInstance());
-		gd.addNumericField("Threshold: ", 0.75, 2);
-		gd.addNumericField("Only use every n edge pixel. n: ", 1, 0);
-		gd.addNumericField("Threads: ", 2, 0);
-		gd.addNumericField("Minimum size (factor): ", 1, 2);
-		gd.addNumericField("Maximum size (factor): ", 1, 2);
-		gd.addNumericField("Size delta (factor): ", 1, 2);
-		gd.addNumericField("Minimum angle (deg): ", 360, 2);
-		gd.addNumericField("Maximum angle (deg): ", 360, 2);
-		gd.addNumericField("Angle delta (deg): ", 360, 2);
-		gd.addNumericField("Summand for accumulator smoothing(0 = off): ", 0, 2);
-		gd.addNumericField("Non-Max-Supression-quad-pixels(1=off, only odd): ",1,2);
-		gd.addCheckbox("Show hits in Log", true);
-		gd.addCheckbox("HoughSpace-output", false);
-		gd.addCheckbox("Disable pic-output",false);
-		gd.showDialog();
-		if (gd.wasCanceled()) {
-			IJ.error("GHT-Plugin", "Plugin was canceled!");
-		};
-		treshold = (float)gd.getNextNumber();
-		pixel_offset = (int)gd.getNextNumber();
-		threads_input = (int)gd.getNextNumber();
-		size_min = (float)gd.getNextNumber();
-		size_max = (float)gd.getNextNumber();
-		size_delta = (float)gd.getNextNumber();
-		angle_min = (float)gd.getNextNumber();
-		angle_max = (float)gd.getNextNumber();
-		angle_delta = (float)gd.getNextNumber();
-		acc_smooth_sum = (float)gd.getNextNumber();
-		non_max_suppr_size = (int)gd.getNextNumber();
-		show_hits_in_log = gd.getNextBoolean();
-		hspace_output = gd.getNextBoolean();
-		disable_pic_out = gd.getNextBoolean();
-		// input validation
-		if (treshold <= 0) {
-			IJ.error("Threshold <= 0. Threshold deactivated!");
-			treshold = (float)0.75;
-		}
-		if (pixel_offset < 0) {
-			IJ.error("Negative pixel-offset not allowed. Pixel-offset deactivated.");
-			pixel_offset = 1;
-		}
-		if (size_min<=0 || size_max<=0 || size_delta<=0 || size_min>size_max) {
-			IJ.error("Wrong scaling parameters. Scaling deactivated.");
-			size_min = (float) 1;
-			size_max = (float) 1;
-			size_delta = (float) 1;
-		}
-		if (angle_min<0 || angle_max<=0 || angle_delta<=0 || angle_min>angle_max || angle_max>360) {
-			IJ.error("Wrong rotation parameters. Rotation deactivated.");
-			angle_min = (float) 360;
-			angle_max = (float) 360;
-			angle_delta = (float) 360;
-		}
-		if (acc_smooth_sum < 0) {
-			IJ.error("GHT-Plugin", "Accumulator smoothing summand may not be negative! Smooth accumulator updating ist deactivated now.");
-			acc_smooth_sum = 0;
-		}
-		if (non_max_suppr_size < 1 || non_max_suppr_size%2 == 0) {
-			IJ.error("GHT-Plugin", "Value for non-max-suppression-quad-pixel-lengt must be odd and positive. Functionality is now disabled!");
-			non_max_suppr_size = 1;
-		};
-		if (threads_input <= 0) {
-			IJ.error("GHT-Plugin", "At least one thread needed. Threads set to 1!");
-			threads_input = 1;
-		};
-		// Output of parameters
-		IJ.log("Parameters:   threshold: " +treshold+ ", pixel_offset: " +pixel_offset+ ", acc_smooth_sum: " +acc_smooth_sum+ ", non-max-suppr-size: " +non_max_suppr_size);
-		IJ.log("                      min. size: " +size_min+ ", max. size: " +size_max+ ", size delta: " +size_delta);
-		IJ.log("                      min. angle: " +angle_min+ ", max. angle: " +angle_max+ ", angle delta: " +angle_delta);
-		
-		// Find ref-image and analyze ref-object
-		for (int i=0; i<picDirFileList.length; i++) {
-			
-			File f = new File (picDir+picDirFileList[i]);
-			if (f.isFile() && picDirFileList[i].toLowerCase().contains("reference_object.")) {
-				
-				IJ.log("Processing file: " +picDirFileList[i]);
-				long time = -System.currentTimeMillis();
-				
-				analyze_ref_image (f.getPath());
-				f = null;
-				
-				System.gc();
-				
-				rtable_simple_size = rtable.size() / 2;
-				do_scaling();
-				rtable_scaled_size = rtable.size() / 2;
-				do_rotation();
-				rtable_full_size = rtable.size() / 2;
-				
-				IJ.log("Reference-object analyzed! Time needed: " +(time + System.currentTimeMillis())+ "ms");
-			} // f.isFile() && picDirFileList[i].equals("reference_object.gif"
-		} // for (int i=0; i<picDirFileList.length; i++)
-		
-		System.gc();
-		
-		// Output of Rtable
-		System.out.println("RTable: ");
-		System.out.println("size: " +rtable.size());
-		for (int j = 0; j < rtable.size(); j++) {
-			if (j%2 == 0)
-				System.out.println("x: " +rtable.get(j));
-			else
-				System.out.println("y: " +rtable.get(j));
-		}
-		
-		// Output of params-table
-		System.out.println("Params-Table: ");
-		System.out.println("size: " +params.size());
-		for (int j = 0; j < params.size(); j++) {
-			if (j%2 == 0)
-				System.out.println("scale: " +params.get(j));
-			else
-				System.out.println("rotation: " +params.get(j));
-		}
-		
-		// Analyze images
-		for (int i=0; i<picDirFileList.length; i++) {
-			File f = new File (picDir+picDirFileList[i]);
-			if (f.isFile() && !picDirFileList[i].equals("reference_object.gif")) {
-				String fname = f.getPath();
-				f = null;
-				
-				search_for_object(fname, treshold);
-				System.gc();
-				IJ.log(hits.size()/2+ " objects found:");
-				
-				// Output of hits
-				if (show_hits_in_log)
-					for (int j=0; j<hits.size()-1; j++) {
-						IJ.log("x: " +hits.get(j)+ ", y: " +hits.get(j+1));
-						j++;
-					} // for (int j=0; j<hits.size()-1; j++)
-				
-				// Output of HoughSpace
-				if (hspace_output && !disable_pic_out) {
-					ImagePlus img_hspace = NewImage.createByteImage("HoughSpace for " + fname, wsch, hsch, 0, NewImage.FILL_WHITE);
-					ImageProcessor ip_hspace = img_hspace.getProcessor();
-					byte [] pixels_hspace = (byte [])ip_hspace.getPixels();
-
-					for (int j=0; j<hits.size()-1; j++) {
-						pixels_hspace[hits.get(j) + hits.get(j+1)*wsch] = 0;
-						j++;
-					} // for (int j=0; j<hits.size()-1; j++)
-					
-					img_hspace.show();
-					pixels_hspace = null;
-				} // if (hspace_output && !disable_pic_out)
-				
-				hits.clear();
-				
-			} // if (f.isFile() && !picDirFileList[i].equals("reference_object.gif"))
-		} // for (int i=0; i<picDirFileList.length; i++)
-		IJ.log("Number of threads used for object searching: " +threads_input);
-	} // public void run(ImageProcessor ip)
-*/
-
-
 	private ImagePlus imp;
 	private ImageProcessor ip;
 	
@@ -225,7 +56,7 @@ public class General_Hough_Transform
 		//hits = null;
 		
 		// Choose pics-source-dir
-		String picDir = IJ.getDirectory("Select Image Source Folder...");
+		String picDir = IJ.getDirectory("Select Reference Images Folder...");
 		if (picDir==null) return;
 		String [] picDirFileList = new File(picDir).list();
 		if (picDirFileList==null) return;
@@ -308,16 +139,27 @@ public class General_Hough_Transform
 		this.ip = this.imp.getProcessor();
 		int nSize = this.imp.getStackSize();
 		
+		ResultsTable rt;
+		
 		// Find ref-image and analyze ref-object
 		for (int i=0; i<picDirFileList.length; i++) {
 			
 			File f = new File (picDir+picDirFileList[i]);
 			if (f.isFile()) {
 				
-				IJ.log("Processing file: " +picDirFileList[i]);
+				// Create a new results table for each reference image
+				rt = new ResultsTable();
+				/*ResultsTable rt = Analyzer.getResultsTable();
+				if (rt == null){
+					rt = new ResultsTable();
+					Analyzer.setResultsTable(rt);
+				}*/
+				
+				IJ.log("Processing file: " + picDirFileList[i]);
 				long time = -System.currentTimeMillis();
 				
 				analyze_ref_image (f.getPath());
+				String fname = f.getPath();
 				f = null;
 				
 				System.gc();
@@ -335,14 +177,17 @@ public class General_Hough_Transform
 				{
 					this.imp.setSlice(index);
 					this.ip.setSliceNumber(index);
-					{
-/*						String fname = f.getPath();
-						f = null;*/
-						
+					//{
 						search_for_object(ip, treshold);
 						System.gc();
-						IJ.log("Objects found: " + hits.size()/2);
+						
 						IJ.log("Slice: " + index);
+						int foundCount = hits.size() / 2;
+						IJ.log("Objects found: " + foundCount);
+						if (foundCount > 0){ // then add to the results table
+							rt.incrementCounter();
+							rt.addValue(index, foundCount);
+						}
 						
 						// Output of hits
 						if (show_hits_in_log)
@@ -368,8 +213,10 @@ public class General_Hough_Transform
 						
 						hits.clear();
 						
-					} // if (f.isFile() && !picDirFileList[i].equals("reference_object.gif"))
-				} // for (int i=0; i<picDirFileList.length; i++)			
+					//} // if (f.isFile() && !picDirFileList[i].equals("reference_object.gif"))
+				} // for (int i=0; i<picDirFileList.length; i++)
+				
+				rt.show("Results Table: " + fname);
 			
 			} // f.isFile() && picDirFileList[i].equals("reference_object.gif"
 		} // for (int i=0; i<picDirFileList.length; i++)
