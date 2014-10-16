@@ -171,8 +171,8 @@ public class General_Hough_Transform
 				rtable_full_size = rtable.size() / 2;
 				
 				IJ.log("Reference-object analyzed! Time needed: " +(time + System.currentTimeMillis())+ "ms");
-				// Analyze images
 				
+				// Analyze images
 				for (int index = 1; index <= nSize; ++index)
 				{
 					this.imp.setSlice(index);
@@ -186,7 +186,8 @@ public class General_Hough_Transform
 						IJ.log("Objects found: " + foundCount);
 						if (foundCount > 0){ // then add to the results table
 							rt.incrementCounter();
-							rt.addValue(index, foundCount);
+							rt.addValue("Slice", index);
+							rt.addValue("Count", foundCount);
 						}
 						
 						// Output of hits
