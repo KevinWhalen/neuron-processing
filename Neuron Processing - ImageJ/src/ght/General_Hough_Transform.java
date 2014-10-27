@@ -11,6 +11,7 @@ import java.io.File;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.Prefs;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.plugin.filter.Analyzer;
@@ -52,6 +53,7 @@ public class General_Hough_Transform
 	private ImageProcessor ip;
 	
 	public void run(String arg) {
+
 		System.gc();
 		//hits = null;
 		
@@ -186,7 +188,8 @@ public class General_Hough_Transform
 						IJ.log("Objects found: " + foundCount);
 						if (foundCount > 0){ // then add to the results table
 							rt.incrementCounter();
-							rt.addValue(index, foundCount);
+							rt.addValue("Slice", index);
+							rt.addValue("FoundCount", foundCount);
 						}
 						
 						// Output of hits
@@ -246,7 +249,6 @@ public class General_Hough_Transform
 		IJ.log("Number of threads used for object searching: " +threads_input);
 	} // public void run(ImageProcessor ip)
 
-	
 	private void search_for_object(ImageProcessor ip_Sch, float treshold) {
 
 		long time = -System.currentTimeMillis();
@@ -424,7 +426,6 @@ public class General_Hough_Transform
 		pixels = null;
 	} // public void analyze_ref_image (String imagefile)
 	
-	
 	private void build_xy_rtable_n (int n) {
 		int i = 0, j = n;
 		int xmin = wref, xmax = 0;
@@ -572,6 +573,7 @@ public class General_Hough_Transform
 		hits.add(y);
 	}
 	
+	/*
 	private void search_for_object(String imagefile, float treshold) {
 		IJ.log("Searching for objects in file: " +imagefile);
 		long time = -System.currentTimeMillis();
@@ -731,5 +733,7 @@ public class General_Hough_Transform
 		//ip_sch = null;
 		//imp_sch.close();
 	} // private void search_for_object()
+	
+	*/
 	
 } // public class GHT_ implements PlugIn

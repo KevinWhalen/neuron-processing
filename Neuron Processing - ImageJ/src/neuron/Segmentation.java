@@ -19,6 +19,7 @@ package neuron;
 import CED.Canny_Edge_Detector;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.Prefs;
 import ij.WindowManager;
 import ij.gui.Plot;
 import ij.ImageStack;
@@ -224,6 +225,7 @@ public class Segmentation
 	@Override
 	public void run(String s)
 	{
+	
 		// Preprocessing attempts
 		preprocess();
 		
