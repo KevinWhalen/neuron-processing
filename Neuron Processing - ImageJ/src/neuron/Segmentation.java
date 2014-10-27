@@ -19,7 +19,6 @@ package neuron;
 import CED.Canny_Edge_Detector;
 import ij.IJ;
 import ij.ImagePlus;
-import ij.Prefs;
 import ij.WindowManager;
 import ij.gui.Plot;
 import ij.ImageStack;
@@ -36,7 +35,8 @@ public class Segmentation
 	implements PlugIn
 	//implements PlugInFilter
 {
-	private ImagePlus impOriginal, imp, impHisto;
+	// Will probably only need two ImagePlus objects, but more makes keep the separate easier at the moment.
+	private ImagePlus impOriginal, imp, impHisto, impSmooth;
 	private ImageProcessor ip;
 	private ImageStack is;
 	
@@ -208,15 +208,32 @@ public class Segmentation
 		this.imp.hide();
 		this.impHisto.show();
 		this.ip = this.impHisto.getProcessor();
-		
-		/*for (int i = 1; i <= this.stackSize; ++i){
+
+		String parameters = "blocksize=127 histogram=256 maximum=3 mask=*None* fast_(less_accurate)";
+		for (int i = 1; i <= this.stackSize; ++i){
 			this.impHisto.setSlice(i);
 			this.ip.setSliceNumber(i);
 			IJ.log("    current slice: " + this.impHisto.getCurrentSlice());
 			
 			// http://fiji.sc/Enhance_Local_Contrast_(CLAHE)
 			IJ.run(this.impHisto, "Enhance Local Contrast (CLAHE)", parameters);
-		}*/
+		}
+		
+		IJ.run(this.imp, "Bilateral Filter", "spatial=3 range=50");
+		this.impSmooth = IJ.getImage();
+		IJ.run(this.impSmooth, "Invert LUT", "");
+		IJ.run(this.impSmooth, "Despeckle", "stack");
+		IJ.run(this.impSmooth, "Invert", "stack");
+		
+		this.impOriginal.show();
+		this.imp.show();
+		this.impHisto.show();
+		this.impSmooth.show();
+		
+		//IJ.showMessage("At the next prompt; select [Average Intensity], and remove the leading and trailing slices that do not include the neuron cells.");
+		//IJ.run(imp, "Z Project...", "projection=[Average Intensity]");
+		//IJ.run(imp, "Enhance Local Contrast (CLAHE)", "blocksize=127 histogram=256 maximum=3 mask=*None*");
+		
 		// http://homepages.inf.ed.ac.uk/rbf/HIPR2/pixmult.htm
 	}
 	
@@ -225,7 +242,6 @@ public class Segmentation
 	@Override
 	public void run(String s)
 	{
-	
 		// Preprocessing attempts
 		preprocess();
 		
