@@ -173,23 +173,20 @@ public class General_Hough_Transform
 				rtable_full_size = rtable.size() / 2;
 				
 				IJ.log("Reference-object analyzed! Time needed: " +(time + System.currentTimeMillis())+ "ms");
-				// Analyze images
 				
-				for (int index = 1; index <= nSize; ++index)
-				{
-					this.imp.setSlice(index);
-					this.ip.setSliceNumber(index);
-					//{
+				// Analyze images
+
 						search_for_object(ip, treshold);
 						System.gc();
 						
-						IJ.log("Slice: " + index);
+						IJ.log("Slice: " + fname);
 						int foundCount = hits.size() / 2;
 						IJ.log("Objects found: " + foundCount);
 						if (foundCount > 0){ // then add to the results table
 							rt.incrementCounter();
-							rt.addValue("Slice", index);
+							rt.addValue("Slice", fname);
 							rt.addValue("FoundCount", foundCount);
+							rt.addValue("Count", foundCount);
 						}
 						
 						// Output of hits
@@ -215,9 +212,6 @@ public class General_Hough_Transform
 						} // if (hspace_output && !disable_pic_out)
 						
 						hits.clear();
-						
-					//} // if (f.isFile() && !picDirFileList[i].equals("reference_object.gif"))
-				} // for (int i=0; i<picDirFileList.length; i++)
 				
 				rt.show("Results Table: " + fname);
 			
