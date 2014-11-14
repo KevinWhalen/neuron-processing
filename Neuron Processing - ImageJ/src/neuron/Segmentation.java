@@ -126,6 +126,8 @@ public class Segmentation
 		this.ip = this.imp.getProcessor();
 		this.impOriginal.hide();
 		
+		IJ.log("aaaaaaaa!!!!!!");
+		
 		IJ.run(this.imp, "Despeckle", "stack");
 		IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Bright");
 		IJ.run(this.imp, "Remove Outliers...", "Radius=2.0, Threshold=50, 'Which outliers'=Dark");
@@ -243,7 +245,7 @@ public class Segmentation
 	public void run(String s)
 	{
 		// Preprocessing attempts
-		preprocess();
+		prepocessSecondAttempt();
 		
 		
 		
