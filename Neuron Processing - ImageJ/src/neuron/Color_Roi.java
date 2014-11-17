@@ -34,10 +34,11 @@ public class Color_Roi
 	private int height;
 
 	// Plugin parameters.
-	private int value = 0;
+	private int value = 255;
 	//public String name;
 	public boolean useNew;
 	public boolean blackBackground;
+	public boolean stack;
 	// http://rsb.info.nih.gov/ij/developer/api/ij/gui/Roi.html
 	public Roi roi;
 	//roi.isArea() 
@@ -65,12 +66,10 @@ public class Color_Roi
 	@Override
 	public void run(ImageProcessor ip)
 	{
-		// Get image properties.
-		width = ip.getWidth();
-		height = ip.getHeight();
+
 		
 		if (showDialog()){
-			if (this.blackBackground) this.value = 1;
+			if (this.blackBackground) this.value = 0;
 			if (this.useNew){
 				/*ImageProcessor ip2 = ip.duplicate();
 				new ImagePlus("Colored", ip2).show();
@@ -82,28 +81,35 @@ public class Color_Roi
 				coloredImp.updateAndDraw();*/
 				this.image = new Duplicator().run(this.image);
 				this.image.show();
-			} /*else {
-				this.roi = this.image.getRoi();
-				process(this.image);
-				//process(ip);
-				this.image.updateAndDraw();
-			}*/
+			}
 			this.roi = this.image.getRoi();
-			//this.image.setType(ImagePlus.COLOR_RGB);
-			ImageConverter convert = new ImageConverter(this.image);
-			convert.convertToRGB();
-			IJ.log("Image type after conversion: " + this.image.getType());
-			process(this.image);
+
+			// Convert to a color image.
+			if (this.image.getType() != ImagePlus.COLOR_RGB){
+				ImageConverter convert = new ImageConverter(this.image);
+				convert.convertToRGB();
+				IJ.log("Image type after conversion: " + this.image.getType());
+			}
+
+			// Get image properties.
+			width = ip.getWidth();
+			height = ip.getHeight();
+			
+			if (this.stack) process(this.image);
+			else process(image.getStack().getProcessor(this.image.getCurrentSlice()));
+
 			this.image.updateAndDraw();
 		}
 	}
 
 
+	// TODO: add parameters for single or stack
 	private boolean showDialog()
 	{
 		// Preferences.
 		this.useNew = Prefs.get("CR_newImage.boolean", false);
 		this.blackBackground = Prefs.get("CR_blackBackground.boolean", false);
+		this.stack = Prefs.get("CR_stack.boolean", true);
 		
 		GenericDialog gd = new GenericDialog("Process pixels");
 
@@ -113,6 +119,7 @@ public class Color_Roi
 		//gd.addStringField("name", "SOME NAME");
 		gd.addCheckbox("Use a new image", this.useNew);
 		gd.addCheckbox("Black background", this.blackBackground);
+		gd.addCheckbox("Color the entire stack", this.stack);
 
 		gd.showDialog();
 		if (gd.wasCanceled()) return false;
@@ -122,9 +129,11 @@ public class Color_Roi
 		//name = gd.getNextString();
 		this.useNew = gd.getNextBoolean();
 		this.blackBackground = gd.getNextBoolean();
+		this.stack = gd.getNextBoolean();
 		
 		Prefs.set("CR_useNew.boolean", this.useNew);
 		Prefs.set("CR_blackBackground.boolean", this.blackBackground);
+		Prefs.set("CR_stack.boolean", this.stack);
 
 		return true;
 	}
@@ -149,6 +158,7 @@ public class Color_Roi
 		for (int i = 1; i <= size; i++){
 			IJ.showProgress(i, size);
 			process(image.getStack().getProcessor(i));
+			//Rectangle r = image.getStack().getRoi().getBounds();
 		}
 	}
 
@@ -230,16 +240,22 @@ public class Color_Roi
 		    for (int x = 0; x < width; x++){
 		    	if (this.roi.contains(x, y)){
 			        int rgb = pixels[x + y * width]; // value is a bit-packed RGB value.
-			        IJ.log(Integer.toBinaryString(rgb));
+			        //IJ.log(Integer.toBinaryString(rgb));
 			        int red = rgb & 0xff;
 			        int green = (rgb >> 8) & 0xff;
 			        int blue = (rgb >> 16) & 0xff;
-			        IJ.log("rgb(" + red + ", " + green  + ", " + blue + ")");
-			        rgb = red;
-			        rgb = (rgb << 8) + green;
-			        rgb = (rgb << 8) + blue;
-			        pixels[x + y * width] = rgb;
-			        IJ.log(Integer.toBinaryString(rgb));
+			        //IJ.log("rgb(" + red + ", " + green  + ", " + blue + ")");
+			        // value is controlled by blackBackground.
+			        if (red != this.value && green != this.value && blue != this.value){
+			        	red = 0;
+			        	green = 0;
+			        	blue = 255;
+				        rgb = red;
+				        rgb = (rgb << 8) + green;
+				        rgb = (rgb << 8) + blue;
+				        pixels[x + y * width] = rgb;
+				        //IJ.log(Integer.toBinaryString(rgb));
+			        }
 		    	}
 		    }
 		}
