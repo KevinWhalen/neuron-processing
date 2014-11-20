@@ -26,7 +26,7 @@ public class Coordinates {
     public boolean equals(Object obj) {
             if(obj instanceof Coordinates) {
                     Coordinates temp = (Coordinates)obj;
-                    return ((this.X==temp.X) && (this.Y==temp.Y));
+                    return ((this.X == temp.X) && (this.Y == temp.Y));
             }
             return false;
     }
@@ -40,4 +40,3 @@ public class Coordinates {
     
     private int X, Y;
 }
-
